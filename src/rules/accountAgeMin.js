@@ -1,4 +1,3 @@
-// src/rules/accountAgeMin.js
 module.exports = {
   id: "account-age-min",
   description: "Contributor account must be at least N days old",

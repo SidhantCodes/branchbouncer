@@ -1,0 +1,18 @@
+name: "BranchBouncer"
+description: "Bounces sketchy PRs with configurable rules (account age, changes, repos, protected paths)"
+author: "Sidhant Mishra"
+inputs:
+  github_token:
+    description: "GitHub token"
+    required: true
+    default: "${{ github.token }}"
+  config_path:
+    description: "/src/config.js"
+    required: false
+    default: ".branchbouncer.yml"
+runs:
+  using: "node20"
+  main: "dist/index.js"
+branding:
+  icon: "shield"
+  color: "blue"
