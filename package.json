@@ -1,6 +1,6 @@
 {
   "name": "branchbouncer",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Configurable PR validation tool & GitHub Action",
   "main": "dist/index.js",
   "bin": {
@@ -24,7 +24,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
-    "inquirer": "^9.0.0",
+    "inquirer": "^8.2.7",
     "js-yaml": "^4.1.0",
     "micromatch": "^4.0.5"
   },
