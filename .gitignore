@@ -2,7 +2,7 @@
 node_modules/
 
 # Build artifacts
-dist/
+
 .ncc-cache/
 
 # Logs
@@ -18,7 +18,7 @@ Thumbs.db
 .vscode/
 *.swp
 
-# Env files (not needed now, but good practice)
+# Env files
 .env
 .env.local
 .env.*.local

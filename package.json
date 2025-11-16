@@ -24,6 +24,7 @@
   "dependencies": {
     "@actions/core": "^1.11.1",
     "@actions/github": "^6.0.0",
+    "figlet": "^1.9.4",
     "inquirer": "^8.2.7",
     "js-yaml": "^4.1.0",
     "micromatch": "^4.0.5"
