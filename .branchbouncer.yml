@@ -1,4 +1,10 @@
 rules:
   - id: account-age-min
     enabled: true
-    minAccountAgeDays: 1
+    minAccountAgeDays: 730
+  - id: pr-total-changes-min
+    enabled: true
+    minTotalChanges: 500
+  - id: block-protected-paths
+    enabled: true
+    blockedPaths: []

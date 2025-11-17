@@ -7,6 +7,7 @@ const inquirer = require('inquirer');
 const yaml = require('js-yaml');
 const figlet = require('figlet');
 const { ruleRegistry } = require('./rules');
+const { enableBranchProtection } = require('./protect');
 
 // Loading animation
 function showLoadingAnimation(message) {
@@ -254,6 +255,152 @@ jobs:
   console.log(`[+] Created ${path.relative(process.cwd(), workflowPath)}`);
 }
 
+function getRepoNameFromGit() {
+  try {
+    const gitConfigPath = path.resolve(process.cwd(), '.git', 'config');
+    
+    if (!fs.existsSync(gitConfigPath)) {
+      return null;
+    }
+
+    const gitConfig = fs.readFileSync(gitConfigPath, 'utf8');
+    
+    // Match GitHub remote URL patterns
+    // git@github.com:owner/repo.git OR https://github.com/owner/repo.git
+    const sshMatch = gitConfig.match(/github\.com[:/]([^/]+)\/(.+?)(?:\.git)?[\s\n]/);
+    const httpsMatch = gitConfig.match(/github\.com\/([^/]+)\/(.+?)(?:\.git)?[\s\n]/);
+    
+    const match = sshMatch || httpsMatch;
+    
+    if (match) {
+      return {
+        owner: match[1],
+        repo: match[2].replace('.git', '')
+      };
+    }
+    
+    return null;
+  } catch (error) {
+    return null;
+  }
+}
+
+async function promptBranchProtection() {
+  console.log('\n');
+  
+  const { enableProtection } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'enableProtection',
+      message: 'Do you want to enable hard mode branch protection on GitHub?',
+      default: false
+    }
+  ]);
+
+  if (!enableProtection) {
+    return null;
+  }
+
+  // Try to detect repo info from Git
+  const gitInfo = getRepoNameFromGit();
+  
+  let owner = gitInfo ? gitInfo.owner : '';
+  let repo = gitInfo ? gitInfo.repo : path.basename(process.cwd());
+  let branch = 'main';
+
+  // Show detected information
+  console.log('\n[+] Repository Information:');
+  console.log(`    Owner: ${owner || '(not detected)'}`);
+  console.log(`    Repository: ${repo}`);
+  console.log(`    Branch: ${branch}\n`);
+
+  const { isCorrect } = await inquirer.prompt([
+    {
+      type: 'confirm',
+      name: 'isCorrect',
+      message: 'Is this information correct?',
+      default: true
+    }
+  ]);
+
+  // If user wants to edit, prompt for each field
+  if (!isCorrect) {
+    const editAnswers = await inquirer.prompt([
+      {
+        type: 'input',
+        name: 'owner',
+        message: '> Repository owner (username or org):',
+        default: owner,
+        validate: (input) => input.trim().length > 0 || 'Owner is required'
+      },
+      {
+        type: 'input',
+        name: 'repo',
+        message: '> Repository name:',
+        default: repo,
+        validate: (input) => input.trim().length > 0 || 'Repository name is required'
+      },
+      {
+        type: 'input',
+        name: 'branch',
+        message: '> Branch to protect:',
+        default: branch
+      }
+    ]);
+
+    owner = editAnswers.owner.trim();
+    repo = editAnswers.repo.trim();
+    branch = editAnswers.branch.trim();
+  }
+
+  // Now prompt for GitHub token
+  console.log('\nYou will need a GitHub Personal Access Token with repo admin rights.');
+  console.log('Create one at: https://github.com/settings/tokens\n');
+
+  const { token } = await inquirer.prompt([
+    {
+      type: 'password',
+      name: 'token',
+      message: '> GitHub Personal Access Token:',
+      mask: '*',
+      validate: (input) => input.trim().length > 0 || 'Token is required'
+    }
+  ]);
+
+  return {
+    token: token.trim(),
+    owner,
+    repo,
+    branch
+  };
+}
+
+async function applyBranchProtection(protectionConfig) {
+  const stopLoading = showLoadingAnimation('Enabling branch protection on GitHub...');
+
+  try {
+    await enableBranchProtection({
+      token: protectionConfig.token,
+      owner: protectionConfig.owner,
+      repo: protectionConfig.repo,
+      branch: protectionConfig.branch,
+      checkName: 'BranchBouncer / validate-pr'
+    });
+
+    stopLoading();
+    console.log(`[+] Branch protection enabled for ${protectionConfig.owner}/${protectionConfig.repo}:${protectionConfig.branch}`);
+  } catch (error) {
+    stopLoading();
+    console.error(`\n[!] Failed to enable branch protection: ${error.message}`);
+    
+    if (error.response) {
+      console.error('[!] GitHub API response:', JSON.stringify(error.response, null, 2));
+    }
+    
+    console.log('\nYou can enable branch protection manually in your GitHub repository settings.');
+  }
+}
+
 async function main() {
    
      console.log(`
@@ -300,10 +447,21 @@ async function main() {
   await ensureWorkflowFile();
 
   console.log('\n[+] Setup complete!\n');
-  console.log('Next steps:');
+
+  // Prompt for branch protection
+  const protectionConfig = await promptBranchProtection();
+  
+  if (protectionConfig) {
+    await applyBranchProtection(protectionConfig);
+  }
+
+  console.log('\nNext steps:');
   console.log('  1. Commit .branchbouncer.yml and .github/workflows/branchbouncer.yml');
   console.log('  2. Push to GitHub');
-  console.log('  3. In repo settings, mark the BranchBouncer check as required for your main branch.');
+  
+  if (!protectionConfig) {
+    console.log('  3. In repo settings, mark the BranchBouncer check as required for your main branch.');
+  }
 }
 
 if (require.main === module) {
