@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 // src/cli.js
-const { initCommand, protectCommand, showHelp } = require('./cli/commands');
+const { initCommand, protectCommand, removeCommand, showHelp } = require('./cli/commands');
 
 async function main() {
   const args = process.argv.slice(2);
@@ -18,6 +18,31 @@ async function main() {
     case '-p':
     case '--protect':
       await protectCommand();
+      break;
+    
+    case 'remove-protection':
+    case '-rm':
+    case '--remove-protection':
+      await removeCommand();
+      break;
+    
+    case 'extra':
+      console.log('\nCheckout paintnclick.art');
+      console.log('Follow @paint.n.click on Instagram\n');
+      break;
+    
+    case 'whomadeyou':
+      console.log('\nBranchBouncer was created by:');
+      console.log('Sidhant: @_sidhant22');
+      console.log('Aditya: @oye.ranjan\n');
+      console.log('Check them out on instagram\n');
+      break;
+    
+    case 'poem':
+      console.log('\nYou can defend your repo');
+      console.log('but you can not change your start');
+      console.log('men can defend their code');
+      console.log('but never their broken heart\n');
       break;
     
     case 'help':
