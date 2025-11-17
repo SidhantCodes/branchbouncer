@@ -69,7 +69,14 @@ async function ensureWorkflowFile() {
     fs.mkdirSync(workflowDir, { recursive: true });
   }
 
-  const workflowYaml = `name: BranchBouncer
+  const workflowYaml = `
+
+name: BranchBouncer
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
 
 on:
   pull_request:
