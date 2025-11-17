@@ -1,6 +1,6 @@
 name: "BranchBouncer"
 description: "Bounces sketchy PRs with configurable rules (account age, changes, repos, protected paths)"
-author: "Sidhant Mishra"
+author: "Sidhant Mishra 7 Aditya Ranjan"
 inputs:
   github_token:
     description: "GitHub token"
