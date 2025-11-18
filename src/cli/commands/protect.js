@@ -19,6 +19,9 @@ async function protectCommand() {
 
   console.log('[+] Found .branchbouncer.yml configuration\n');
 
+  // Red warning about committing changes
+  console.log('\x1b[31m[WARNING] Make sure you have committed all your changes before enforcing branch protection!\x1b[0m \n');
+
   const protectionConfig = await getProtectionConfig();
   await applyBranchProtection(protectionConfig);
 }

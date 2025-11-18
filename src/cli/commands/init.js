@@ -2,8 +2,6 @@
 const { showBanner } = require('../banner');
 const { checkExistingFiles, writeConfigFile, ensureWorkflowFile } = require('../file-manager');
 const { promptRules } = require('../rules-prompt');
-const { promptBranchProtection } = require('../protection-prompt');
-const { applyBranchProtection } = require('../protection-service');
 
 async function initCommand() {
   showBanner();
@@ -29,20 +27,11 @@ async function initCommand() {
 
   console.log('\n[+] Setup complete!\n');
 
-  // Prompt for branch protection
-  const protectionConfig = await promptBranchProtection();
-  
-  if (protectionConfig) {
-    await applyBranchProtection(protectionConfig);
-  }
-
-  console.log('\nNext steps:');
+  console.log('Next steps:');
   console.log('  1. Commit .branchbouncer.yml and .github/workflows/branchbouncer.yml');
   console.log('  2. Push to GitHub');
-  
-  if (!protectionConfig) {
-    console.log('  3. Run "branchbouncer protect" later to enable hard mode branch protection');
-  }
+  console.log('  3. Run "branchbouncer protect" to enable hard mode branch protection');
+  console.log('\n[!] Important: Make sure to commit your changes BEFORE enforcing branch protection!\n');
 }
 
 module.exports = { initCommand };
