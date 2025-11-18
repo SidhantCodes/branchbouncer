@@ -18,11 +18,21 @@ async function enableBranchProtection({ token, owner, repo, branch, checkName })
       strict: true,
       contexts: [checkName]
     },
-    enforce_admins: true,
+    enforce_admins: false,
     required_pull_request_reviews: {
-      required_approving_review_count: 0
+      required_approving_review_count: 0,
+      dismiss_stale_reviews: false,
+      require_code_owner_reviews: false,
+      require_last_push_approval: false
     },
-    restrictions: null
+    restrictions: null,
+    required_linear_history: false,
+    allow_force_pushes: false,
+    allow_deletions: false,
+    block_creations: false,
+    required_conversation_resolution: false,
+    lock_branch: false,
+    allow_fork_syncing: true
   };
 
   const response = await fetch(url, {
