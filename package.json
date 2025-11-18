@@ -1,6 +1,6 @@
 {
   "name": "branchbouncer",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Configurable PR validation tool & GitHub Action",
   "main": "dist/index.js",
   "bin": {
