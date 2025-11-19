@@ -1,0 +1,23 @@
+
+
+name: BranchBouncer
+
+permissions:
+  contents: read
+  pull-requests: read
+  checks: write
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+jobs:
+  validate-pr:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Run BranchBouncer
+        uses: SidhantCodes/branchbouncer@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          config_path: ".branchbouncer.yml"
