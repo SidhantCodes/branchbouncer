@@ -1,6 +1,6 @@
 // src/cli/rules-prompt.js
 const inquirer = require('inquirer');
-const { ruleRegistry } = require('../rules');
+const { ruleRegistry, alwaysActiveRules } = require('../rules');
 
 // Categorize rules
 function categorizeRules() {
@@ -12,6 +12,11 @@ function categorizeRules() {
   };
 
   for (const rule of Object.values(ruleRegistry)) {
+    // Skip always-active rules - they run automatically
+    if (alwaysActiveRules.includes(rule.id)) {
+      continue;
+    }
+
     if (rule.id.includes('account-age') || rule.id.includes('user-public-repos')) {
       categories['User Account Rules'].push(rule);
     } else if (rule.id.includes('pr-') || rule.id.includes('commit-')) {
