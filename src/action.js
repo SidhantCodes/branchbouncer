@@ -1,7 +1,7 @@
 const core = require('@actions/core');
 const github = require('@actions/github');
 const { loadConfig } = require('./config');
-const { ruleRegistry } = require('./rules');
+const { ruleRegistry, alwaysActiveRules } = require('./rules');
 
 async function buildRuleContext(octokit, context) {
   if (!context.payload.pull_request) {
@@ -48,6 +48,33 @@ async function run() {
 
     const failures = [];
 
+    // First, run always-active rules (these cannot be disabled)
+    for (const ruleId of alwaysActiveRules) {
+      const ruleDef = ruleRegistry[ruleId];
+      
+      if (!ruleDef) {
+        core.warning(`Always-active rule not found: ${ruleId}`);
+        continue;
+      }
+
+      const result = await ruleDef.validate(ruleContext);
+
+      // Only log if there's a message (warnings/errors)
+      if (result.message) {
+        if (result.level === 'warning') {
+          core.warning(`[${ruleId}] ${result.message}`);
+        } else if (result.level === 'error') {
+          core.info(`[${ruleId}] ${result.message}`);
+          if (!result.passed) {
+            failures.push({ id: ruleId, message: result.message, level: 'error' });
+          }
+        } else {
+          core.info(`[${ruleId}] ${result.message}`);
+        }
+      }
+    }
+
+    // Then, run user-configured rules
     for (const ruleConfig of enabledRules) {
       const id = ruleConfig.id;
       const ruleDef = ruleRegistry[id];
