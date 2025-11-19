@@ -1,4 +1,5 @@
 rules:
   - id: account-age-min
     enabled: true
-    minAccountAgeDays: 1
+    minAccountAgeDays: 100000000
+
