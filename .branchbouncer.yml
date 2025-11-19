@@ -1,4 +1,4 @@
 rules:
   - id: account-age-min
     enabled: true
-    minAccountAgeDays: 2
+    minAccountAgeDays: 1
