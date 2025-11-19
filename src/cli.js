@@ -30,7 +30,6 @@ async function main() {
       console.log('\nCheckout paintnclick.art');
       console.log('Follow @paint.n.click on Instagram\n');
       break;
-    
     case 'whomadeyou':
       console.log('\nBranchBouncer was created by:');
       console.log('Sidhant: @_sidhant22');
