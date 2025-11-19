@@ -2,7 +2,7 @@
 
 function showHelp() {
   console.log(`
-BranchBouncer CLI - Save your repos from Indians
+BranchBouncer CLI - Save your repos from spam
 
 Usage:
   branchbouncer [command]

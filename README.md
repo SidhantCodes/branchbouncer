@@ -139,6 +139,93 @@ rules:
 
 ---
 
+## Project Structure
+
+BranchBouncer follows a modular architecture for easy maintenance and extensibility:
+
+```
+branchbouncer/
+├── src/
+│   ├── action.js              # GitHub Action entry point
+│   ├── cli.js                 # CLI entry point and command router
+│   ├── config.js              # Configuration loader and validator
+│   ├── protect.js             # GitHub API branch protection
+│   ├── cli/                   # CLI modules
+│   │   ├── banner.js          # ASCII art and welcome messages
+│   │   ├── utils.js           # Shared utilities (loading animations)
+│   │   ├── git-helper.js      # Git repository detection
+│   │   ├── rules-prompt.js    # Interactive rule selection
+│   │   ├── file-manager.js    # Config and workflow file operations
+│   │   ├── protection-prompt.js   # Branch protection prompts
+│   │   ├── protection-service.js  # Branch protection API calls
+│   │   └── commands/          # CLI command implementations
+│   │       ├── init.js        # Setup command
+│   │       ├── protect.js     # Branch protection command
+│   │       ├── remove.js      # Cleanup command
+│   │       ├── help.js        # Help text
+│   │       └── index.js       # Command exports
+│   └── rules/                 # ⭐ Validation rules (add new rules here)
+│       ├── index.js           # Rule registry
+│       ├── accountAgeMin.js   # Minimum account age rule
+│       ├── prTotalChangesMin.js   # Minimum PR changes rule
+│       ├── userPublicReposMin.js  # Minimum public repos rule
+│       └── blockProtectedPaths.js # Path protection rule
+├── dist/                      # Compiled action bundle
+├── action.yml                 # GitHub Action metadata
+└── package.json
+```
+
+### Adding Custom Rules
+
+To add a new validation rule:
+
+1. Create a new file in `src/rules/` (e.g., `myCustomRule.js`)
+2. Follow the rule template structure:
+
+```javascript
+module.exports = {
+  id: 'my-custom-rule',
+  description: 'Brief description of what this rule validates',
+  
+  async validate(context, config) {
+    // context.prAuthor - PR author username
+    // context.prNumber - PR number
+    // context.repoOwner - Repository owner
+    // context.repoName - Repository name
+    // context.octokit - GitHub API client
+    
+    // Your validation logic here
+    
+    if (ruleViolated) {
+      return {
+        passed: false,
+        message: 'Detailed failure message'
+      };
+    }
+    
+    return {
+      passed: true,
+      message: 'Success message'
+    };
+  }
+};
+```
+
+3. Register your rule in `src/rules/index.js`:
+
+```javascript
+const myCustomRule = require('./myCustomRule');
+
+const ruleRegistry = {
+  'my-custom-rule': myCustomRule,
+  // ... other rules
+};
+```
+
+4. Add configuration options in the CLI prompts if needed (`src/cli/rules-prompt.js`)
+
+---
+
 ## Contributing
 
 Contributions are welcome. Areas of focus include:
