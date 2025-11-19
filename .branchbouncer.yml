@@ -1,4 +1,4 @@
 rules:
   - id: pr-total-changes-min
     enabled: true
-    minTotalChanges: 5
+    minTotalChanges: 5000
