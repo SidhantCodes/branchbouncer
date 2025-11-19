@@ -26,8 +26,6 @@ Thumbs.db
 # Coverage / testing
 coverage/
 *.lcov
-.branchbouncer.yml
-.github
 # Temporary files
 *.tmp
 *.log
