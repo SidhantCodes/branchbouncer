@@ -38158,10 +38158,12 @@ function wrappy (fn, cb) {
 /***/ 5783:
 /***/ ((module, __unused_webpack_exports, __nccwpck_require__) => {
 
+// src/action.js
 const core = __nccwpck_require__(7484);
 const github = __nccwpck_require__(3228);
 const { loadConfig } = __nccwpck_require__(1283);
 const { ruleRegistry } = __nccwpck_require__(4357);
+const configEditProtection = __nccwpck_require__(1868);
 
 async function buildRuleContext(octokit, context) {
   if (!context.payload.pull_request) {
@@ -38199,41 +38201,64 @@ async function run() {
     const config = loadConfig(configPath);
     const enabledRules = config.rules || [];
 
-    if (enabledRules.length === 0) {
-      core.info('No rules enabled in BranchBouncer config, skipping.');
-      return;
-    }
-
     const ruleContext = await buildRuleContext(octokit, context);
 
     const failures = [];
 
-    for (const ruleConfig of enabledRules) {
-      const id = ruleConfig.id;
-      const ruleDef = ruleRegistry[id];
+    //
+    // 1. ALWAYS-ON: config file edit protection
+    //
+    const defaultResult = await configEditProtection.run(ruleContext, config);
 
-      if (!ruleDef) {
-        core.warning(`Unknown rule id in config: ${id}`);
-        continue;
+    if (defaultResult.passed) {
+      core.info(`[${defaultResult.id}] ${defaultResult.message}`);
+    } else {
+      core.info(`[${defaultResult.id}] ${defaultResult.message}`);
+      if (defaultResult.level === 'error') {
+        failures.push(defaultResult);
       }
+    }
 
-      const result = await ruleDef.run(ruleContext, ruleConfig);
+    //
+    // 2. User-configured rules from .branchbouncer.yml
+    //
+    if (enabledRules.length === 0) {
+      core.info(
+        'No configurable BranchBouncer rules enabled; only config protection rule is active.'
+      );
+    } else {
+      for (const ruleConfig of enabledRules) {
+        const id = ruleConfig.id;
+        const ruleDef = ruleRegistry[id];
 
-      if (result.passed) {
-        core.info(`[${result.id}] ${result.message}`);
-      } else {
-        core.info(`[${result.id}] ${result.message}`);
-        if (result.level === 'error') {
-          failures.push(result);
+        if (!ruleDef) {
+          core.warning(`Unknown rule id in config: ${id}`);
+          continue;
+        }
+
+        const result = await ruleDef.run(ruleContext, ruleConfig);
+
+        if (result.passed) {
+          core.info(`[${result.id}] ${result.message}`);
+        } else {
+          core.info(`[${result.id}] ${result.message}`);
+          if (result.level === 'error') {
+            failures.push(result);
+          }
         }
       }
     }
 
+    //
+    // 3. Final decision
+    //
     if (failures.length > 0) {
-      const messages = failures.map(f => `[${f.id}] ${f.message}`).join('\n');
+      const messages = failures
+        .map(f => `[${f.id}] ${f.message}`)
+        .join('\n');
       core.setFailed(`BranchBouncer failed:\n${messages}`);
     } else {
-      core.info('All BranchBouncer rules passed ✅');
+      core.info('All BranchBouncer rules passed!');
     }
   } catch (err) {
     core.setFailed(err.message);
@@ -38338,6 +38363,75 @@ module.exports = {
       passed,
       level: 'error',
       message
+    };
+  }
+};
+
+
+/***/ }),
+
+/***/ 1868:
+/***/ ((module) => {
+
+const PROTECTED_FILES = [
+  '.branchbouncer.yml',
+  '.github/workflows/branchbouncer.yml'
+];
+
+module.exports = {
+  id: 'config-edit-protection',
+  description:
+    'Protects BranchBouncer config and workflow files from edits by untrusted users',
+
+  async run(ctx, config) {
+    const changedFiles = (ctx.files || []).map(f => f.filename);
+    const touchedProtected = changedFiles.filter(f =>
+      PROTECTED_FILES.includes(f)
+    );
+
+    // If no protected files were touched, nothing to enforce
+    if (touchedProtected.length === 0) {
+      return {
+        id: this.id,
+        passed: true,
+        level: 'error',
+        message: 'No BranchBouncer config files modified'
+      };
+    }
+
+    const authorLogin =
+      (ctx.user && ctx.user.login ? ctx.user.login : '').toLowerCase();
+    const repoOwner = (ctx.owner || '').toLowerCase();
+
+    const allowedEditors = Array.isArray(config.allowedConfigEditors)
+      ? config.allowedConfigEditors.map(name => String(name).toLowerCase())
+      : [];
+
+    const isOwner = authorLogin && authorLogin === repoOwner;
+    const isExplicitlyAllowed =
+      authorLogin && allowedEditors.includes(authorLogin);
+
+    const passed = isOwner || isExplicitlyAllowed;
+
+    const fileList = touchedProtected.join(', ');
+    const baseMessage = `BranchBouncer protected files modified: ${fileList} by @${ctx.user.login}`;
+
+    if (passed) {
+      return {
+        id: this.id,
+        passed: true,
+        level: 'error',
+        message: `${baseMessage} (user is repo owner or listed in allowedConfigEditors)`
+      };
+    }
+
+    return {
+      id: this.id,
+      passed: false,
+      level: 'error',
+      message:
+        `${baseMessage}. This is not allowed. ` +
+        `Only the repo owner (${ctx.owner}) or users listed in "allowedConfigEditors" in .branchbouncer.yml may modify these files.`
     };
   }
 };
