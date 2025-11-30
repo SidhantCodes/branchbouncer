@@ -1,7 +1,7 @@
 {
   "name": "branchbouncer",
-  "version": "1.0.5",
-  "description": "Configurable PR validation tool & GitHub Action",
+  "version": "1.0.6",
+  "description": "Automated pull request policy enforcement for GitHub repositories, ensuring only trusted and compliant contributions are allowed to merge.",
   "main": "dist/index.js",
   "bin": {
     "branchbouncer": "src/cli.js"
@@ -12,10 +12,17 @@
   },
   "keywords": [
     "github-actions",
-    "pr",
-    "validation"
+    "security",
+    "pull-request-validation",
+    "branch-protection",
+    "repository-security",
+    "open-source-maintenance",
+    "contribution-policy",
+    "pr-risk-control",
+    "workflow-enforcement",
+    "code-quality-checks"
   ],
-  "author": "Sidhant Mishra & Aditya Ranjan", 
+  "author": "Sidhant Mishra & Aditya Ranjan",
   "contributors": [
     "Sidhant Mishra",
     "Aditya Ranjan"
