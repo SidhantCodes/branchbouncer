@@ -8,6 +8,12 @@ const yaml = require('js-yaml');
 const figlet = require('figlet');
 const { ruleRegistry } = require('./rules');
 
+// NEW: command-line args + other commands
+const argv = process.argv.slice(2);
+const { protectCommand } = require('./cli/commands/protect');
+const { removeCommand } = require('./cli/commands/remove');
+const { showHelp } = require('./cli/commands/help');
+
 // Loading animation
 function showLoadingAnimation(message) {
   const frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
@@ -255,16 +261,15 @@ async function ensureWorkflowFile() {
             config_path: ".branchbouncer.yml"
   `;
 
-
   fs.writeFileSync(workflowPath, workflowYaml, 'utf8');
   
   stopLoading();
   console.log(`[+] Created ${path.relative(process.cwd(), workflowPath)}`);
 }
 
-async function main() {
-   
-     console.log(`
+// 🔹 This is your original init flow, unchanged, just moved into its own function
+async function runInit() {
+  console.log(`
                    \\_________________/
                    |       | |       |
                    |       | |       |
@@ -282,7 +287,7 @@ async function main() {
                           \\| |/
                            \\_/
   `);
-    console.log(figlet.textSync('BranchBouncer', {
+  console.log(figlet.textSync('BranchBouncer', {
     font: 'Doom',
     horizontalLayout: 'default'
   }));
@@ -312,6 +317,43 @@ async function main() {
   console.log('  1. Commit .branchbouncer.yml and .github/workflows/branchbouncer.yml');
   console.log('  2. Push to GitHub');
   console.log('  3. In repo settings, mark the BranchBouncer check as required for your main branch.');
+}
+
+// 🔹 New main: routes commands, but uses your existing init logic
+async function main() {
+  const cmd = argv[0];
+
+  switch (cmd) {
+    // Init (default)
+    case 'init':
+    case '-i':
+    case '--init':
+    case undefined:
+      return runInit();
+
+    // Enable branch protection
+    case 'protect':
+    case '-p':
+    case '--protect':
+      return protectCommand();
+
+    // Remove BranchBouncer config/workflow
+    case 'remove-protection':
+    case '-rm':
+    case '--remove-protection':
+      return removeCommand();
+
+    // Help
+    case 'help':
+    case '-h':
+    case '--help':
+      return showHelp();
+
+    // Unknown command
+    default:
+      console.log(`[!] Unknown command: ${cmd}`);
+      return showHelp();
+  }
 }
 
 if (require.main === module) {
